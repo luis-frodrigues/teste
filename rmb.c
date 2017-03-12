@@ -12,11 +12,11 @@
 #include <sys/socket.h>
 extern int errno;
 
-typedef struct{
+typedef struct serv{
 	char *name;
 	char *ip;
-	int udp;
-	int tcp;
+	char *udp;
+	char *tcp;
 }serv; 
 
 
@@ -31,14 +31,24 @@ char *publish="publish";
 char *exitt="exit";
 char *hbyname="tejo.tecnico.ulisboa.pt";
 char buffer[256];
-char msg[256];
+char msg[256]=" a;b;c;d";
 char hostname[128];
 struct hostent *host;
 struct in_addr *inaddr;
 struct sockaddr_in idserveraddr;
-serv servers[20];
+struct serv **servers=(struct serv**)malloc(sizeof(serv*));
+char a='\0';
+char x[128], z[128],c[128],v[128];
+char strin[20][128];
+int fd,n,j=0, o=0, u=0;
 
-int fd,n;
+//malloc dos ponteiros da estrutura serv
+for (int i = 0; i <=20; ++i)
+{
+	servers[i]=(struct serv*)malloc(sizeof(serv));
+
+}
+
 
 //user host name
 if(gethostname(hostname,128)==-1)
@@ -46,15 +56,18 @@ if(gethostname(hostname,128)==-1)
 
 else printf("hostname:%s ", hostname);
 
+
 //tecnico host
 if((host= gethostbyname(hbyname))==NULL)
 	printf("error: %s\n",strerror(errno));
 else
 	printf("official host name: %s\n",host->h_name);
 
+
 //puts the address of tecnico in a different srtucture
 inaddr=(struct in_addr*)host->h_addr_list[0];
 printf("internet address: %s (%08lX)\n",inet_ntoa(*inaddr),(long unsigned int)ntohl(inaddr->s_addr));
+
 
 //socket for UDP connection
 fd=socket(AF_INET,SOCK_DGRAM,0);//UDP socket
@@ -72,6 +85,8 @@ idserveraddr.sin_addr= *inaddr;
 idserveraddr.sin_port=htons(59000);
 
 addrlen=sizeof(idserveraddr);
+
+
 //while in which is read the keybord commands
 while(out)
 {
@@ -106,22 +121,71 @@ while(out)
 			n=recvfrom(fd, msg, sizeof(msg),0, (struct sockaddr*)&idserveraddr,(socklen_t*)&addrlen);
 			if(n==-1)
 				printf("error: %s\n",strerror(errno));
-	
+			//escreve os serves no terminal
 			write(1,msg,n);
-			sscanf(msg,"%s;%s;%d;%d",servers[0].name,servers[0].ip,&(servers[0].udp),&(servers[0].tcp));
+			
+
+			//tentativa de meter o caracter '\0'
+			sprintf(msg, "%s%c", msg,a);
+			//msg[strlen(msg)]='\0';
+			printf("mensagem: %s", msg );
+
+			//inicializar todos os parâmetros para funcionar
+			o=0; j=0; u=0;
+			
+			//Saber em que índice é que 'SERVERS\n' termina
+			while(msg[o]!='\n')
+			{
+				o++;
+			}
+				
+			/*retira os ';' e substitui os espaços para poder utilizar o sscanf
+				e cada parágrafo é introduzido num respectivo indíce do vector de string */
+			for (int i = o+1; i < (strlen(msg)-1); ++i)
+			{
+				if(msg[i]=='\n')
+				{
+					strin[j][u]='\0';
+					i++;
+					j++;
+					u=0;	
+				}else{
+					if(msg[i]==';')
+					{	
+						msg[i]=' ';
+					}
+					strin[j][u]=msg[i];
+					u++;
+				}	
+			}
+
+			for (int i = 0; i < j; ++i)
+			{
+				printf("%d: %s\n",i,strin[i] );
+				//divido os 4 parâmetros da string em 4 strings diferentes
+				if(sscanf(strin[i],"%s %s %s %s",x,c,z,v )==EOF)
+				printf("error: %s\n",strerror(errno));
+				
+				strcpy(servers[i]->name, x);
+				strcpy(servers[i]->ip, c);
+				strcpy(servers[i]->udp, z);
+				strcpy(servers[i]->tcp, v);
+
+				//Verificar se os parâmetros ficam na estrutura
+				printf("name:%s\n ip:%s\n udp:%s\n tcp:%s\n",servers[i]->name,servers[i]->ip,servers[i]->udp,servers[i]->tcp );
+			}
+			
 		}else{
 
 			if(strcmp(terminal,exitt)==0)
 				out=0;
 		}
-		printf("damn\n" );
+		printf("Estou no while de fora\n" );
 	}
 		
 	
 }
 printf("first:%s\n second:%s\n", terminal, buffer);
-printf("%s;%s;%d;%d",servers[0].name,servers[0].ip,servers[0].udp,servers[0].tcp);
-
 
 	exit(0);
 }
