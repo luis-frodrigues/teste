@@ -13,7 +13,7 @@
 extern int errno;
 
 typedef struct{
-	char host[128];
+	char *name;
 	char *ip;
 	int udp;
 	int tcp;
@@ -78,10 +78,12 @@ while(out)
 	scanf("%s", terminal);
 	/*Coloca a mensagem na string buffer*/
 	if(strcmp(terminal,publish)==0)
-	{
+	{	
+		//lê uma linha com um máximo de 140 carateres que é o máximo que a mensagem pode ter
 		scanf("%140s",buffer);
 		msg_lenght=strlen(buffer);
 
+		//envia a mensagem, neste momento está para o tejo mas tem que ser para um server de msg
 		printf("cenas:%s %d \n", buffer, msg_lenght );
 		sendto(fd, buffer, msg_lenght,0, (struct sockaddr*)&idserveraddr,addrlen);
 	
@@ -106,7 +108,7 @@ while(out)
 				printf("error: %s\n",strerror(errno));
 	
 			write(1,msg,n);
-			sscanf(msg,"%s;%s;%d;%d",servers[0].host,servers[0].ip,&(servers[0].udp),&(servers[0].tcp));
+			sscanf(msg,"%s;%s;%d;%d",servers[0].name,servers[0].ip,&(servers[0].udp),&(servers[0].tcp));
 		}else{
 
 			if(strcmp(terminal,exitt)==0)
@@ -118,7 +120,7 @@ while(out)
 	
 }
 printf("first:%s\n second:%s\n", terminal, buffer);
-printf("%s;%s;%d;%d",servers[0].host,servers[0].ip,servers[0].udp,servers[0].tcp);
+printf("%s;%s;%d;%d",servers[0].name,servers[0].ip,servers[0].udp,servers[0].tcp);
 
 
 	exit(0);
